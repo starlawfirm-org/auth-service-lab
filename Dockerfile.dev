@@ -1,0 +1,37 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# 빌드에 필요한 도구들 설치
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
+# 프로젝트 의존성 먼저 설치
+COPY package*.json ./
+RUN npm install
+
+# 전체 소스 복사
+COPY . .
+
+# .env  , .env.development, .env.production 파일 삭제
+RUN rm -f .env .env.development .env.production
+
+# .env 파일 생성
+RUN echo "NODE_ENV=${NODE_ENV}" > .env.development  
+RUN echo "DB_HOST=${DB_HOST}" >> .env.development
+RUN echo "DB_PORT=${DB_PORT}" >> .env.development
+RUN echo "DB_USER=${DB_USER}" >> .env.development
+RUN echo "DB_PASS=${DB_PASS}" >> .env.development
+RUN echo "DB_NAME=${DB_NAME}" >> .env.development
+RUN echo "SUPER_USER_PASSWORD=${SUPER_USER_PASSWORD}" >> .env
+RUN echo "AES_KEY=${AES_KEY}" >> .env.development
+RUN echo "AES_IV=${AES_IV}" >> .env.development
+RUN echo "PORT=${PORT}" >> .env.development
+RUN echo "SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME}" >> .env.development
+RUN echo "REDIS_HOST=${REDIS_HOST}" >> .env.development
+RUN echo "REDIS_PORT=${REDIS_PORT}" >> .env.development
+RUN echo "API_HOST=${API_HOST}" >> .env.development
+RUN echo "FPJS_DATA_SEARCH_URL=${FPJS_DATA_SEARCH_URL}" >> .env.development
+EXPOSE 3000
+
+# 개발 시, ts-node로 실행
+CMD ["npm", "run", "dev"] 

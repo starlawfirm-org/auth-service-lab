@@ -1,0 +1,49 @@
+version: "3.8"
+# 이 컴포즈 파일은 데이터베이스 초기화를 위한 서비스를 정의합니다.
+# 데이터베이스 초기화는 마이그레이션과 시드 프로세스를 포함합니다.
+
+services:
+  init:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASS: example
+      DB_NAME: development_db
+      SUPER_USER_PASSWORD: test-password
+      AES_KEY: "01234567890123456789012345678901"
+      AES_IV: "0123456789012345"
+    command: sh -c "npm run migration:run && npm run seed"
+    depends_on:
+      - db
+      - redis
+    restart: "no"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: redis-server --protected-mode no
+    volumes:
+      - redis-data:/data
+
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: development_db
+    ports:
+      - "5432:5432"
+    command: postgres -c listen_addresses='*' -c max_connections=100
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  redis-data:
+  postgres-data:

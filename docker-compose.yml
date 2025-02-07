@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASS: example
+      DB_NAME: development_db
+      SUPER_USER_PASSWORD: test-password
+      AES_KEY: "01234567890123456789012345678901"
+      AES_IV: "0123456789012345"
+      PORT: 3000
+      SESSION_COOKIE_NAME: "sso_session_id"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      API_HOST: localhost:3000
+      FPJS_DATA_SEARCH_URL: fake-domain/request-id
+    depends_on:
+      - db
+      - redis
+      - init
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: "node dist/server.js"
+
+  init:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASS: example
+      DB_NAME: development_db
+      SUPER_USER_PASSWORD: test-password
+      AES_KEY: "01234567890123456789012345678901"
+      AES_IV: "0123456789012345"
+    command: sh -c "npm run migration:run && npm run seed"
+    depends_on:
+      - db
+      - redis
+    restart: "no"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: redis-server --protected-mode no
+    volumes:
+      - redis-data:/data
+
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: development_db
+    ports:
+      - "5432:5432"
+    command: postgres -c listen_addresses='*' -c max_connections=100
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  redis-data:
+  postgres-data:
